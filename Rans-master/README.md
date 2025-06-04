@@ -1,0 +1,1 @@
+This is simple ransomware with C for educational purpose .
