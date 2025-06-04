@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="messages" id="messages"></div>
+    <div class="input-container">
+      <input type="text" id="messageInput" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="leaveChat()">Leave</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+  
+  <script>
+    const userId = localStorage.getItem("userId");
+    const messagesRef = firestore.collection("messages");
+    const usersRef = firestore.collection("chatUsers");
+
+    // Load messages
+    messagesRef.orderBy("timestamp").onSnapshot(snapshot => {
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML = "";
+      snapshot.forEach(doc => {
+        const message = doc.data();
+        const messageElement = document.createElement("div");
+        messageElement.textContent = `${message.user}: ${message.text}`; // Display the user's name
+        messageElement.classList.add("message", message.user);
+        messagesDiv.appendChild(messageElement);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the bottom
+    });
+
+    // Send a message
+    async function sendMessage() {
+      const messageInput = document.getElementById("messageInput");
+      const text = messageInput.value;
+      if (text.trim() === "") return;
+
+      await messagesRef.add({
+        user: userId,
+        text: text,
+        timestamp: Date.now()
+      });
+
+      messageInput.value = "";
+    }
+
+    // Add a listener to detect the Enter key
+    document.getElementById("messageInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        sendMessage(); // Call the sendMessage function
+      }
+    });
+
+    // Leave the chat
+    async function leaveChat() {
+      // Remove the user
+      await usersRef.doc(userId).delete();
+
+      // Remove the user's messages
+      const userMessages = await messagesRef.where("user", "==", userId).get();
+      userMessages.forEach(async doc => {
+        await messagesRef.doc(doc.id).delete();
+      });
+
+      // Redirect to the home page
+      localStorage.removeItem("userId");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

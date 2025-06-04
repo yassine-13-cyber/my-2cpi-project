@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home - Chat App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to the Chat</h1>
+    <button onclick="enterChat()">Enter the Chat</button>
+    <p id="error" class="error-message"></p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+  
+  <script>
+    async function enterChat() {
+      const usersRef = firestore.collection("chatUsers");
+      const snapshot = await usersRef.get();
+      const now = Date.now();
+
+      // Clean up inactive users (more than 1 minute of inactivity)
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        if (now - data.joinedAt > 1 * 60 * 1000) { // 1 minute
+          await usersRef.doc(doc.id).delete();
+        }
+      }
+
+      // Reload users after cleanup
+      const updatedSnapshot = await usersRef.get();
+      const users = updatedSnapshot.docs.map(doc => doc.id);
+
+      if (users.length >= 2) {
+        document.getElementById("error").textContent = "The room is full. Please try again later.";
+        return;
+      }
+
+      let userId = "";
+      if (!users.includes("Admin")) {
+        userId = "Admin";
+      } else {
+        userId = "User";
+      }
+
+      localStorage.setItem("userId", userId);
+
+      await usersRef.doc(userId).set({ joinedAt: Date.now() });
+
+      window.location.href = "chat.html";
+    }
+  </script>
+</body>
+</html>
