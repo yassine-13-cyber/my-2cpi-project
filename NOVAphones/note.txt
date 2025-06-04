@@ -1,0 +1,5 @@
+TechNOVA team
+
+1. Drag all the documents to your desktop because it won't open in winRAR.
+2. if the pdf file didn't open, it's likely because your pdf reader is outdated or you have an old version of it, 
+by running the donwload.bat, this will download a pdf reader that support our pdf file.
